@@ -58,58 +58,25 @@ async function script (buildType) {
     await runShellCommand('mkdir -p out/sqlite-wrapper')
 
     if (!process.env.SKIP_LIBRARY_BUILD) {
-      await runShellCommand('emcc -O2 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DISABLE_LFS -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS -DSQLITE_ENABLE_JSON1 -DSQLITE_THREADSAFE=0 -DSQLITE_ENABLE_NORMALIZE -c libs/sqlite_js/sqlite3.c -o out/sqlite-wrapper/sqlite3.bc')
-      await runShellCommand('emcc -O2 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DISABLE_LFS -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS -DSQLITE_ENABLE_JSON1 -DSQLITE_THREADSAFE=0 -DSQLITE_ENABLE_NORMALIZE -c libs/sqlite_js/extension-functions.c -o out/sqlite-wrapper/extension-functions.bc')
+      await runShellCommand('emcc -pthread -O2 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DISABLE_LFS -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS -DSQLITE_ENABLE_JSON1 -DSQLITE_THREADSAFE=0 -DSQLITE_ENABLE_NORMALIZE -c libs/sqlite_js/sqlite3.c -o out/sqlite-wrapper/sqlite3.bc')
+      await runShellCommand('emcc -pthread -O2 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DISABLE_LFS -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS -DSQLITE_ENABLE_JSON1 -DSQLITE_THREADSAFE=0 -DSQLITE_ENABLE_NORMALIZE -c libs/sqlite_js/extension-functions.c -o out/sqlite-wrapper/extension-functions.bc')
+      await runShellCommand(
+        `emcc -O2 -Wall -pthread -I.. -c libs/pthreadfs.cpp -o out/libs/pthreadfs.o`
+      )
     }
 
-    await runShellCommand('emcc --memory-init-file 0 -s RESERVED_FUNCTION_POINTERS=64 -s ALLOW_TABLE_GROWTH=1 -s EXPORTED_FUNCTIONS=@libs/sqlite_js/exported_functions.json -s EXPORTED_RUNTIME_METHODS=@libs/sqlite_js/exported_runtime_methods.json -s SINGLE_FILE=0 -s NODEJS_CATCH_EXIT=0 -s NODEJS_CATCH_REJECTION=0 -s INLINING_LIMIT=50 -O3 -flto --closure 1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 out/sqlite-wrapper/sqlite3.bc out/sqlite-wrapper/extension-functions.bc --pre-js src/sqlite_wrapper/wrapper.js -o out/sqlite-wrapper/sql-wasm.js')
+    await runShellCommand('emcc -pthread --memory-init-file 0 -s RESERVED_FUNCTION_POINTERS=64 -s ALLOW_TABLE_GROWTH=1 -s EXPORTED_FUNCTIONS=@libs/sqlite_js/exported_functions.json -s EXPORTED_RUNTIME_METHODS=@libs/sqlite_js/exported_runtime_methods.json -s SINGLE_FILE=0 -s NODEJS_CATCH_EXIT=0 -s NODEJS_CATCH_REJECTION=0 -s INLINING_LIMIT=50 -O3 -flto --closure 1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --js-library=libs/library_pthreadfs.js out/sqlite-wrapper/sqlite3.bc out/sqlite-wrapper/extension-functions.bc out/libs/pthreadfs.o --pre-js src/sqlite_wrapper/wrapper.js -o out/sqlite-wrapper/sql-wasm.js')
     await runShellCommand('mv out/sqlite-wrapper/sql-wasm.js out/tmp-raw.js')
     await runShellCommand('cat libs/sqlite_js/shell-pre.js out/tmp-raw.js libs/sqlite_js/shell-post.js > out/sqlite-wrapper/sql-wasm.js')
     await runShellCommand('rm out/tmp-raw.js')
-
-    /*
-
-      dist/sql-wasm.js: $(BITCODE_FILES) $(OUTPUT_WRAPPER_FILES) $(SOURCE_API_FILES) $(EXPORTED_METHODS_JSON_FILES)
-      $(EMCC) $(EMFLAGS) $(EMFLAGS_OPTIMIZED) $(EMFLAGS_WASM) $(BITCODE_FILES) $(EMFLAGS_PRE_JS_FILES) -o $@
-      mv $@ out/tmp-raw.js
-      cat src/shell-pre.js out/tmp-raw.js src/shell-post.js > $@
-      rm out/tmp-raw.js
-
-     */
-
-
-    //sqlite.js: out/sqlite3.bc out/extension-functions.bc src/shell-pre.js src/shell-post.js src/api.js
-
-    // BITCODE_FILES = out/sqlite3.bc out/extension-functions.bc
-    // OUTPUT_WRAPPER_FILES = src/shell-pre.js src/shell-post.js
-    // SOURCE_API_FILES = src/api.js
-    // EXPORTED_METHODS_JSON_FILES = src/exported_functions.json src/exported_runtime_methods.json
-
-    /* EMFLAGS = --memory-init-file 0 \
-      -s RESERVED_FUNCTION_POINTERS=64 \
-      -s ALLOW_TABLE_GROWTH=1 \
-      -s EXPORTED_FUNCTIONS=@src/exported_functions.json \
-      -s EXPORTED_RUNTIME_METHODS=@src/exported_runtime_methods.json \
-      -s SINGLE_FILE=0 \
-      -s NODEJS_CATCH_EXIT=0 \
-      -s NODEJS_CATCH_REJECTION=0 */
-    /*
-      EMFLAGS_OPTIMIZED= \
-      -s INLINING_LIMIT=50 \
-      -O3 \
-      -flto \
-      --closure 1
-    */
-    /*
-      EMFLAGS_WASM = \
-      -s WASM=1 \
-      -s ALLOW_MEMORY_GROWTH=1
-    */
-
-    /*
-      EMFLAGS_PRE_JS_FILES = \
-      --pre-js src/api.js
-     */
+  } else if (buildType === 'simple-example') {
+    if (!process.env.SKIP_LIBRARY_BUILD) {
+      await runShellCommand(
+        `emcc -O2 -Wall -pthread -I.. -c libs/pthreadfs.cpp -o out/libs/pthreadfs.o`
+      )
+    }
+    await runShellCommand('mkdir -p out/simple-example')
+    await runShellCommand('emcc -pthread -sEXPORTED_FUNCTIONS=_lstat_test -s ALLOW_BLOCKING_ON_MAIN_THREAD=0 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap --js-library=libs/library_pthreadfs.js src/simple_example/simple_file.c out/libs/pthreadfs.o -o out/simple-example/simple_file.js')
   } else {
     throw new Error(`Invalid build type ${buildType}`)
   }

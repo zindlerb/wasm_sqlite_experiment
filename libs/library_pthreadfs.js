@@ -193,7 +193,7 @@ List of implemented syscalls:
   {'name': 'faccessat', 'args': ['dirfd', 'path', 'amode', 'flags']},
   {'name': 'utimensat', 'args': ['dirfd', 'path', 'times', 'flags']},
   {'name': 'fallocate', 'args': ['fd', 'mode', 'off_low', 'off_high', 'len_low', 'len_high']},
-  
+
 */
 
 var SyscallsLibrary = {
@@ -414,13 +414,13 @@ var SyscallsLibrary = {
       var HIGH_OFFSET = 0x100000000; // 2^32
       // use an unsigned operator on low and shift high by 32-bits
       var offset = offset_high * HIGH_OFFSET + (offset_low >>> 0);
-  
+
       var DOUBLE_LIMIT = 0x20000000000000; // 2^53
       // we also check for equality since DOUBLE_LIMIT + 1 == DOUBLE_LIMIT
       if (offset <= -DOUBLE_LIMIT || offset >= DOUBLE_LIMIT) {
         return -{{{ cDefine('EOVERFLOW') }}};
       }
-  
+
       await PThreadFS.llseek(stream, offset, whence);
       {{{ makeSetValue('newOffset', '0', 'stream.position', 'i64') }}};
       if (stream.getdents && offset === 0 && whence === {{{ cDefine('SEEK_SET') }}}) stream.getdents = null; // reset readdir state
@@ -568,49 +568,49 @@ var SyscallsLibrary = {
       assert(nfds <= 64, 'nfds must be less than or equal to 64');  // fd sets have 64 bits // TODO: this could be 1024 based on current musl headers
       assert(!exceptfds, 'exceptfds not supported');
   #endif
-  
+
       var total = 0;
-      
+
       var srcReadLow = (readfds ? {{{ makeGetValue('readfds', 0, 'i32') }}} : 0),
           srcReadHigh = (readfds ? {{{ makeGetValue('readfds', 4, 'i32') }}} : 0);
       var srcWriteLow = (writefds ? {{{ makeGetValue('writefds', 0, 'i32') }}} : 0),
           srcWriteHigh = (writefds ? {{{ makeGetValue('writefds', 4, 'i32') }}} : 0);
       var srcExceptLow = (exceptfds ? {{{ makeGetValue('exceptfds', 0, 'i32') }}} : 0),
           srcExceptHigh = (exceptfds ? {{{ makeGetValue('exceptfds', 4, 'i32') }}} : 0);
-  
+
       var dstReadLow = 0,
           dstReadHigh = 0;
       var dstWriteLow = 0,
           dstWriteHigh = 0;
       var dstExceptLow = 0,
           dstExceptHigh = 0;
-  
+
       var allLow = (readfds ? {{{ makeGetValue('readfds', 0, 'i32') }}} : 0) |
                    (writefds ? {{{ makeGetValue('writefds', 0, 'i32') }}} : 0) |
                    (exceptfds ? {{{ makeGetValue('exceptfds', 0, 'i32') }}} : 0);
       var allHigh = (readfds ? {{{ makeGetValue('readfds', 4, 'i32') }}} : 0) |
                     (writefds ? {{{ makeGetValue('writefds', 4, 'i32') }}} : 0) |
                     (exceptfds ? {{{ makeGetValue('exceptfds', 4, 'i32') }}} : 0);
-  
+
       var check = function(fd, low, high, val) {
         return (fd < 32 ? (low & val) : (high & val));
       };
-  
+
       for (var fd = 0; fd < nfds; fd++) {
         var mask = 1 << (fd % 32);
         if (!(check(fd, allLow, allHigh, mask))) {
           continue;  // index isn't in the set
         }
-  
+
         var stream = await PThreadFS.getStream(fd);
         if (!stream) throw new PThreadFS.ErrnoError({{{ cDefine('EBADF') }}});
-  
+
         var flags = ASYNCSYSCALLS.DEFAULT_POLLMASK;
-  
+
         if (stream.stream_ops.poll) {
           flags = await stream.stream_ops.poll(stream);
         }
-  
+
         if ((flags & {{{ cDefine('POLLIN') }}}) && check(fd, srcReadLow, srcReadHigh, mask)) {
           fd < 32 ? (dstReadLow = dstReadLow | mask) : (dstReadHigh = dstReadHigh | mask);
           total++;
@@ -624,7 +624,7 @@ var SyscallsLibrary = {
           total++;
         }
       }
-  
+
       if (readfds) {
         {{{ makeSetValue('readfds', '0', 'dstReadLow', 'i32') }}};
         {{{ makeSetValue('readfds', '4', 'dstReadHigh', 'i32') }}};
@@ -637,13 +637,13 @@ var SyscallsLibrary = {
         {{{ makeSetValue('exceptfds', '0', 'dstExceptLow', 'i32') }}};
         {{{ makeSetValue('exceptfds', '4', 'dstExceptHigh', 'i32') }}};
       }
-      
+
       return total;
     },
     fdatasync_async : async function(fd) {
       var stream = await ASYNCSYSCALLS.getStreamFromFD(fd);
       //TODO(rstz): Consider implementing this, since Storage Foundation supports flush().
-      return 0; 
+      return 0;
     },
     poll_async : async function(fds, nfds, timeout) {
       var nonzero = 0;
@@ -715,13 +715,13 @@ var SyscallsLibrary = {
       if (!stream.getdents) {
         stream.getdents = await PThreadFS.readdir(stream.path);
       }
-  
+
       var struct_size = {{{ C_STRUCTS.dirent.__size__ }}};
       var pos = 0;
       var off = await PThreadFS.llseek(stream, 0, {{{ cDefine('SEEK_CUR') }}});
-  
+
       var idx = Math.floor(off / struct_size);
-  
+
       while (idx < stream.getdents.length && pos + struct_size <= count) {
         var id;
         var type;
@@ -922,7 +922,7 @@ function wrapSyscallFunction(x, library, isWasi) {
   var t = library[x];
   if (typeof t === 'string') return;
   t = t.toString();
-  
+
   var isVariadic = !isWasi && t.includes(', varargs');
   var canThrow = library[x + '__nothrow'] !== true;
 
@@ -976,7 +976,7 @@ mergeInto(LibraryManager.library, SyscallsLibrary);
  */
 
  mergeInto(LibraryManager.library, {
-  $PThreadFS__deps: ['$getRandomDevice', '$PATH', '$PATH_FS', '$MEMFS_ASYNC', 
+  $PThreadFS__deps: ['$getRandomDevice', '$PATH', '$PATH_FS', '$MEMFS_ASYNC',
 #if ASSERTIONS
     '$ERRNO_MESSAGES', '$ERRNO_CODES',
 #endif
@@ -1781,6 +1781,7 @@ mergeInto(LibraryManager.library, SyscallsLibrary);
       return PATH_FS.resolve(PThreadFS.getPath(link.parent), link.node_ops.readlink(link));
     },
     stat: async function(path, dontFollow) {
+      console.log('lib p stat')
       var lookup = await PThreadFS.lookupPath(path, { follow: !dontFollow });
       var node = lookup.node;
       if (!node) {
@@ -1792,6 +1793,7 @@ mergeInto(LibraryManager.library, SyscallsLibrary);
       return await node.node_ops.getattr(node);
     },
     lstat: async function(path) {
+      console.log('library_pthread lstat')
       return await PThreadFS.stat(path, true);
     },
     chmod: async function(path, mode, dontFollow) {
@@ -2287,8 +2289,8 @@ mergeInto(LibraryManager.library, SyscallsLibrary);
     loadAvailablePackages: async function () {
       if ("pthreadfs_available_packages" in Module) {
         while (Module["pthreadfs_available_packages"].length > 0) {
-          let package = Module["pthreadfs_available_packages"].pop();
-          await package();
+          let pthreadPackage = Module["pthreadfs_available_packages"].pop();
+          await pthreadPackage();
         }
       }
     },
@@ -2653,7 +2655,7 @@ mergeInto(LibraryManager.library, {
         // When the byte data of the file is populated, this will point to either a typed array, or a normal JS array. Typed arrays are preferred
         // for performance, and used by default. However, typed arrays are not resizable like normal JS arrays are, so there is a small disk size
         // penalty involved for appending file writes that continuously grow a file similar to std::vector capacity vs used -scheme.
-        node.contents = null; 
+        node.contents = null;
       } else if (PThreadFS.isLink(node.mode)) {
         node.node_ops = MEMFS_ASYNC.ops_table.link.node;
         node.stream_ops = MEMFS_ASYNC.ops_table.link.stream;
@@ -3063,7 +3065,7 @@ mergeInto(LibraryManager.library, {
         }
         if (attr.size !== undefined) {
           if (ENVIRONMENT_IS_WEB) {
-            // Since Access Handles are unavailable in workers, we must use 
+            // Since Access Handles are unavailable in workers, we must use
             // writables instead.
             let wt = await node.localReference.createWritable({ keepExistingData: true});
             await wt.truncate(attr.size);
@@ -3352,7 +3354,7 @@ mergeInto(LibraryManager.library, {
               position += await stream.handle.getSize();
             }
           }
-        } 
+        }
 
         if (position < 0) {
           throw new PThreadFS.ErrnoError({{{ cDefine('EINVAL') }}});

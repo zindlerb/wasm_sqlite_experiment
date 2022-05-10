@@ -814,13 +814,13 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
     * @param {number[]} data An array of bytes representing
     * an SQLite database file
     */
-    function Database(data) {
-        this.filename = "dbfile_" + (0xffffffff * Math.random() >>> 0);
-        if (data != null) {
-            FS.createDataFile("/", this.filename, data, true, true);
-        }
-        this.handleError(sqlite3_open(this.filename, apiTemp));
-        this.db = getValue(apiTemp, "i32");
+  function Database(data) {
+    console.log('open db')
+    this.filename = "/persistent/db";
+    this.handleError(sqlite3_open(this.filename, apiTemp));
+    console.log('get db pointer')
+    this.db = getValue(apiTemp, "i32");
+    console.log('registerExtensionFunctions')
         registerExtensionFunctions(this.db);
         // A list of all prepared statements of the database
         this.statements = {};

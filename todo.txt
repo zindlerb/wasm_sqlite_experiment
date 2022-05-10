@@ -6,11 +6,14 @@ From js query wasm sqlite with the same api as websql. Make it persist.
 
 Doing:
 x import the code to get the speed test working
-- get build of including a c function and console logging working
-- consult sql.js to understand how they do the includes, mimic the include of open and exec
-- get wrapped version working in memory, no pthreadfs
-- get that working in a web worker
+x get build of including a c function and console logging working
+x consult sql.js to understand how they do the includes, mimic the include of open and exec
+x get wrapped version working in memory, no pthreadfs
+x get that working in a web worker
 - get that working with pthreadfs
+  !! does not work.
+  - debug the spot where this failes
+  - make a simple file opening test case. Attempt to run this peristant inside a worker.
 - translate speed test to js and write a test
 
 Absorbing:
@@ -33,3 +36,17 @@ Questions:
 
 can modify how sql js is modularized:
 https://github.com/sql-js/sql.js/issues/438
+
+
+Theory:
+- with proxy to pthread, we are calling out to the main thread for some things.
+- with my webworker we are calling out to the webworker for some things, but the web worker doesn't have the needed api due to permissions.
+
+
+do a test with unix stat
+  - in main thread in mem
+  - in webworker in mem
+  - in webworker pthread
+  - in main pthread build
+  - try running with proxy to pthread
+  - try running with regular build

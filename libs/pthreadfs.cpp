@@ -315,6 +315,7 @@ SYS_CAPI_DEF(stat64, 195, long path, long buf) {
 }
 
 SYS_CAPI_DEF(lstat64, 196, long path, long buf) {
+  printf("cpp lstat64\n");
   std::string pathname((char*)path);
   if (emscripten::is_pthreadfs_file(pathname)) {
     g_sync_to_async_helper.invoke([path, buf](emscripten::sync_to_async::Callback resume) {
