@@ -76,7 +76,7 @@ async function script (buildType) {
       )
     }
     await runShellCommand('mkdir -p out/simple-example')
-    await runShellCommand('emcc -pthread -sEXPORTED_FUNCTIONS=_lstat_test -s ALLOW_BLOCKING_ON_MAIN_THREAD=0 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap --js-library=libs/library_pthreadfs.js src/simple_example/simple_file.c out/libs/pthreadfs.o -o out/simple-example/simple_file.js')
+    await runShellCommand('emcc -pthread -sEXPORTED_FUNCTIONS=_lstat_test,_lstat_test_with_thread -s ALLOW_BLOCKING_ON_MAIN_THREAD=0 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap -sPTHREAD_POOL_SIZE=2 --js-library=libs/library_pthreadfs.js src/simple_example/simple_file.c out/libs/pthreadfs.o -o out/simple-example/simple_file.js')
   } else {
     throw new Error(`Invalid build type ${buildType}`)
   }

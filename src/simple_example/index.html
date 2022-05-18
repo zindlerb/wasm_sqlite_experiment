@@ -1,8 +1,10 @@
 <meta charset="utf8" />
 <html>
-  <script src='/out/simple-example/simple_file.js'></script>
+
   <script>
-    window.lstat_test = Module.cwrap('lstat_test', 'number', [])
+    console.log('here')
+    //window.lstat_test = Module.cwrap('lstat_test', 'number', [])
+    new Worker('/src/simple_example/worker.js')
   </script>
   <body>
     Output is in Javascript console

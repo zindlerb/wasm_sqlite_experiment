@@ -50,3 +50,39 @@ do a test with unix stat
   - in main pthread build
   - try running with proxy to pthread
   - try running with regular build
+
+
+
+next:
+- draft questions for the guy
+- ways to get thread result without blocking
+
+
+can't it all happen inside 1 big thread?
+
+- make notes on what I've tried so far. Articulate assumptions
+- understand the asyncify stuff, can this get around the blocking?
+- test out 1 big thread that spawns at startup and then gets communicated to
+- read multithreading chapter
+
+
+
+
+
+Notes:
+
+- It works when running on the main thread using proxy to pthread.
+  - would the example run in a webworker?
+- It does not work when trying to run sql.js in a webworker for persistant files.
+- It does work for sql.js in web worker in mempory.
+
+
+Why doesn't the webworker example work?
+  - theory something in the pthreadfs library relies on calling out to the main thread (like mayby opfs only accessible in main thread not in a worker) and calls are being proxied to a worker and this stalls forever.
+    - can I simulate this in my simple example?
+
+so Ideally I want to run all of my work in a pthread. this is what proxy to pthread does.
+BUT, some issues:
+
+- getting results, how does the caller get its results?
+- how to proxy all the methods?
